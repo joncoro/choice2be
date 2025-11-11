@@ -10,39 +10,55 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      /* Ocultar scrollbars en TODOS los elementos */
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE y Edge */
+    }
+
+    /* Ocultar scrollbars webkit en todos los elementos */
+    *::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
     }
 
     /* Configurar html y body para ocupar 100% de la pantalla */
     html, body {
       width: 100%;
       height: 100%;
-      overflow: hidden; /* Ocultar scrollbars */
-    }
-
-    /* Ocultar scrollbars en todos los navegadores pero mantener scroll funcional */
-    body {
-      /* Para Firefox */
-      scrollbar-width: none;
-      /* Para IE y Edge */
-      -ms-overflow-style: none;
-    }
-
-    /* Para Chrome, Safari y Opera */
-    body::-webkit-scrollbar {
-      display: none;
+      overflow: hidden !important;
+      position: fixed;
     }
 
     /* Contenedor del embed al 100% */
     .embed-container {
       width: 100%;
       height: 100%;
-      overflow: hidden;
+      overflow: hidden !important;
+      position: relative;
+    }
+
+    /* Ocultar div interno del embed */
+    [data-heffl-embed] {
+      width: 100% !important;
+      height: 100% !important;
+      overflow: hidden !important;
     }
 
     /* Asegurar que el iframe interno también no muestre scrollbars */
     iframe {
-      border: none;
-      overflow: hidden;
+      border: none !important;
+      overflow: hidden !important;
+      width: 100% !important;
+      height: 100% !important;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+
+    iframe::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
     }
   </style>
 </head>
@@ -58,5 +74,67 @@
   </div>
 
   <script src="https://clienthub.heffl.com/embed.js"></script>
+
+  <script>
+    // Función para ocultar scrollbars en iframes generados dinámicamente
+    function hideScrollbars() {
+      const iframes = document.querySelectorAll('iframe');
+      iframes.forEach(iframe => {
+        // Agregar atributo scrolling="no"
+        iframe.setAttribute('scrolling', 'no');
+
+        // Aplicar estilos inline adicionales
+        iframe.style.overflow = 'hidden';
+        iframe.style.border = 'none';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+
+        // Intentar ocultar scrollbars dentro del iframe (si es del mismo origen)
+        try {
+          if (iframe.contentDocument) {
+            const style = iframe.contentDocument.createElement('style');
+            style.textContent = `
+              * {
+                scrollbar-width: none !important;
+                -ms-overflow-style: none !important;
+              }
+              *::-webkit-scrollbar {
+                display: none !important;
+                width: 0 !important;
+                height: 0 !important;
+              }
+              html, body {
+                overflow: hidden !important;
+              }
+            `;
+            iframe.contentDocument.head.appendChild(style);
+          }
+        } catch (e) {
+          // Cross-origin, no se puede acceder al contenido del iframe
+          console.log('Cross-origin iframe detected');
+        }
+      });
+    }
+
+    // Ejecutar cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+      hideScrollbars();
+
+      // Observar cambios en el DOM para cuando se agregue el iframe
+      const observer = new MutationObserver(function(mutations) {
+        hideScrollbars();
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+
+      // Ejecutar también después de un delay para asegurar
+      setTimeout(hideScrollbars, 500);
+      setTimeout(hideScrollbars, 1000);
+      setTimeout(hideScrollbars, 2000);
+    });
+  </script>
 </body>
 </html>
